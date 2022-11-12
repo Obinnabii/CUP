@@ -1,8 +1,16 @@
 
 package java_cup;
 
-import java.io.*;
-import java_cup.runtime.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.PrintWriter;
+
+import java_cup.runtime.ComplexSymbolFactory;
+import counterexample.StateItem;
+import counterexample.UnifiedExample;
 
 /**
  * This class serves as the main driver for the JavaCup system. It accepts user
@@ -111,6 +119,15 @@ public class Main {
   protected static boolean no_summary = false;
   /** User option -- number of conflicts to expect */
   protected static int expect_conflicts = 0;
+  /** Whether to report counterexamples when conflicts are found.
+   * (CupEx extension) */
+  public static boolean report_counterexamples = true;
+  /** Whether to report statistics about counterexample finding.
+   * (CupEx extension) */
+  public static boolean report_cex_stats = false;
+  /** Whether to report statistics about counterexample finding to standard output.
+   * (CupEx extension) */
+  public static boolean report_cex_stats_to_out = false;
 
   /* frankf added this 6/18/96 */
   /** User option -- should generator generate code for left/right values? */
@@ -184,6 +201,8 @@ public class Main {
     parse_action_row.clear();
     lalr_state.clear();
     ErrorManager.clear();
+    StateItem.clear();
+    System.gc();
 
     /* process user options and arguments */
     parse_args(argv);
@@ -260,12 +279,30 @@ public class Main {
     if (!no_summary)
       emit_summary(did_output);
 
-    /*
-     * If there were errors during the run, exit with non-zero status
-     * (makefile-friendliness). --CSA
-     */
-    if (ErrorManager.getManager().getErrorCount() != 0)
-      System.exit(100);
+        //        for (lalr_state state : lalr_state.all_states()) {
+        //            System.out.println(state);
+        //        }
+
+        if (report_cex_stats) {
+            if (report_cex_stats_to_out) {
+                System.out.println("conflicts:\n" + emit.num_conflicts);
+                System.out.println("nonterminals:\n" + non_terminal.number());
+                System.out.println("productions:\n" + production.number());
+                System.out.println("states:\n" + lalr_state.number());
+                StateItem.report();
+                lalr_state.report();
+                System.out.println(
+                        "Total time used for finding counterexamples:\n"
+                                + lalr_state.cumulativeCexTime);
+            } else
+                System.err.println(
+                        "Total time used for finding counterexamples: "
+                                + lalr_state.cumulativeCexTime);
+        }
+
+        /* If there were errors during the run,
+         * exit with non-zero status (makefile-friendliness). --CSA */
+        if (ErrorManager.getManager().getErrorCount() != 0) System.exit(100);
   }
 
   /* . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . */
@@ -304,7 +341,11 @@ public class Main {
         + "    -dump_states   produce a dump of parse state machine\n"
         + "    -dump_tables   produce a dump of the parse tables\n"
         + "    -dump          produce a dump of all of the above\n"
-        + "    -version       print the version information for CUP and exit\n");
+        + "    -version       print the version information for CUP and exit\n"
+        + "    -noexamples    do not search for counterexamples in case of"
+        + " conflict\n"
+        + "    -extendedsearch do not use optimization when searching for"
+        + " counterexamples\n");
     System.exit(1);
   }
 
@@ -414,6 +455,10 @@ public class Main {
         emit.class_type_argument = argv[i];
       }
 
+      /* CupEx extension */
+      else if (argv[i].equals("-noexamples")) report_counterexamples = false;
+      else if (argv[i].equals("-extendedsearch")) UnifiedExample.extendedSearch = true;
+      /* End CupEx extension */
       /* CSA 24-Jul-1999; suggestion by Jean Vaucher */
       else if (!argv[i].startsWith("-") && i == len - 1) {
         /* use input from file. */

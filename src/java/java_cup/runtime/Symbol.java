@@ -9,14 +9,17 @@ package java_cup.runtime;
  * @author Frank Flannery
  */
 
-/*
- * **************************************************************** Class Symbol
- * what the parser expects to receive from the lexer. the token is identified as
- * follows: sym: the symbol type parse_state: the parse state. value: is the
- * lexical value of type Object left : is the left position in the original
- * input file right: is the right position in the original input file xleft: is
- * the left position Object in the original input file xright: is the left
- * position Object in the original input file
+/* ****************************************************************
+  Class Symbol
+  what the parser expects to receive from the lexer.
+  the token is identified as follows:
+  sym:    the symbol type
+  parse_state: the parse state.
+  value:  is the lexical value of type Object
+  left :  is the left position in the original input file
+  right:  is the right position in the original input file
+  xleft:  is the left position Object in the original input file
+  xright:  is the left position Object in the original input file
  ******************************************************************/
 
 public class Symbol {
